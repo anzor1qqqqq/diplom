@@ -1,31 +1,51 @@
-# Импортируем нужные библиотеки
 import matplotlib.pyplot as plt
+import pandas as pd
+from sqlalchemy import create_engine
 
-# Данные для графика
-месяцы = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн']
-продажи = [150, 200, 180, 300, 250, 400]
-расходы = [100, 120, 150, 200, 180, 220]
+plt.rcParams['font.family'] = 'DejaVu Sans'  # поддержка кириллицы
 
-# Создаем график
-plt.figure(figsize=(10, 6))  # Размер графика
+def get_data_from_mysql():
+    """Достаем данные из вашей таблицы finance"""
+    try:
+        engine = create_engine(
+            'mysql+mysqlconnector://user:123@localhost:6033/order_desk'
+        )
+        
+        query = """
+        SELECT
+            month_name,
+            month_num,
+            sales,
+            expenses
+        FROM finance
+        WHERE year = 2024
+        ORDER BY month_num
+        """
+        
+        df = pd.read_sql_query(query, engine)
+        print("Успешное подключение к базе данных")
+        return df
+            
+    except Exception as e:
+        print(f"Ошибка подключения к MySQL: {e}")
+        return None
 
-# Два графика на одном рисунке
-plt.plot(месяцы, продажи, label='Продажи', 
-         marker='o', linewidth=2, color='green')
-plt.plot(месяцы, расходы, label='Расходы', 
-         marker='s', linewidth=2, color='red')
+# Вызов функции
+df = get_data_from_mysql()
 
-# Настройки графика
-plt.title('Продажи и расходы по месяцам', fontsize=16)
-plt.xlabel('Месяцы', fontsize=12)
-plt.ylabel('Тысячи рублей', fontsize=12)
-plt.grid(True, alpha=0.3)  # Сетка с прозрачностью
-plt.legend()  # Показываем легенду
-
-# Сохраняем график
-plt.savefig('matplotlib_pyplot.png', dpi=300)
-
-# Показываем график
-plt.show()
-
-print("matplotlib_pyplot.png'")
+if df is not None:
+    print(df.head())
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(df['month_num'], df['sales'], marker='o', label='Продажи')
+    plt.plot(df['month_num'], df['expenses'], marker='s', label='Расходы')
+    plt.xlabel('Месяц')
+    plt.ylabel('Сумма')
+    plt.title('Продажи и расходы за 2024 год')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.xticks(df['month_num'], df['month_name'], rotation=45)
+    plt.tight_layout()
+    plt.show()
+else:
+    print("Не удалось получить данные из базы данных.")
