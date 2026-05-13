@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  php:
+    # image: php:7.4-apache
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: >
+      bash -c "a2enmod rewrite
+      && apache2-foreground"    
+    ports:
+      - 8081:80
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html/
+  db:
+    image: mysql
+    restart: always
+    # command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: order_client
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 123
+      # MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    ports:
+      - 6033:3306
+    volumes:
+      - mysql_vol:/var/lib/mysql
+    command: --sql_mode=""
+
+  phpmyadmin:
+    image: phpmyadmin
+    links:
+      - db
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PMA_ARBITRARY: 1
+      PMA_PORT: 3306
+      PMA_HOST: db
+      UPLOAD_LIMIT: 64M
+
+volumes:
+  mysql_vol:
